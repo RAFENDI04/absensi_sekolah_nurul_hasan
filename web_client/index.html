@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Presensi Siswa LAN - Academic Precision</title>
+  
+  <!-- Typography from Image 12.markdown: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- QRCode generation library (Offline Local first with CDN fallback) -->
+  <script src="js/qrcode.min.js"></script>
+  <script>if (!window.QRCode) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');</script>
+  <!-- HTML5 QR Scanner library for webcam access (Offline Local first with CDN fallback) -->
+  <script src="js/html5-qrcode.min.js"></script>
+  <script>if (!window.Html5Qrcode) document.write('<script src="https://unpkg.com/html5-qrcode"><\/script>');</script>
+
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top LAN Connectivity Header -->
+  <header class="lan-header" id="lanHeader">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <img src="logo.jpg" alt="Logo SMA Nurul Hasan" class="brand-logo-img">
+      </div>
+      <div class="brand-text">
+        <h1 class="school-name" id="schoolNameHeader">SMA NURUL HASAN SABUNTAN</h1>
+        <span class="system-subtitle">PRESENSI SISWA · JARINGAN LOKAL (LAN)</span>
+      </div>
+    </div>
+
+    <!-- LAN Health Widget -->
+    <div class="lan-status-widget">
+      <div class="pulse-dot" id="lanPulseDot"></div>
+      <div class="lan-details">
+        <div class="lan-ip-row">
+          <span class="lan-label">GATEWAY:</span>
+          <span class="lan-ip tabular-nums" id="lanIpDisplay">192.168.1.10:8000</span>
+        </div>
+        <div class="lan-health-status" id="lanHealthText">Terhubung (Ping: <span id="pingValue">12</span>ms)</div>
+      </div>
+      <button class="btn-icon" id="btnTestPing" title="Uji Koneksi LAN">
+        <i class="fa-solid fa-arrows-rotate"></i>
+      </button>
+    </div>
+
+    <!-- User Profile & Navigation Trigger -->
+    <div class="user-profile-header">
+      <div class="user-avatar" id="userInitials">AS</div>
+      <div class="user-info">
+        <div class="user-name" id="userDisplayName">Anwar S.pd.G.r</div>
+        <div class="user-role" id="userDisplayRole">ADMINISTRATOR · ONLINE</div>
+      </div>
+      <button class="btn-logout" id="btnLogout" title="Keluar">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <nav class="main-navbar">
+    <div class="nav-links">
+      <button class="nav-item active" data-tab="tab-dashboard" id="navDashboard">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Dashboard & Terminal Scan</span>
+      </button>
+      <button class="nav-item" data-tab="tab-siswa" id="navSiswa">
+        <i class="fa-solid fa-address-card"></i>
+        <span>Data Siswa & Kartu QR</span>
+      </button>
+      <button class="nav-item" data-tab="tab-rekap" id="navRekap">
+        <i class="fa-solid fa-table-list"></i>
+        <span>Rekapitulasi Kehadiran</span>
+      </button>
+      <button class="nav-item" data-tab="tab-settings" id="navSettings">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Konfigurasi Server & Jadwal</span>
+      </button>
+    </div>
+
+    <div class="nav-clock tabular-nums" id="liveServerClock">
+      <i class="fa-regular fa-clock"></i> 07:14:28 WIB
+    </div>
+  </nav>
+
+  <!-- Main Application Container -->
+  <main class="app-container">
+
+    <!-- ================= TAB 1: DASHBOARD & TERMINAL SCAN ================= -->
+    <section class="tab-content active" id="tab-dashboard">
+      
+      <!-- Metrics Counters (5 Badges Bisa Diklik untuk Melihat Daftar Siswa) -->
+      <div class="metrics-grid">
+        <div class="metric-card clickable" id="cardMetricTotal" title="Klik untuk melihat daftar semua siswa terdaftar">
+          <div class="metric-top">
+            <span class="metric-title">TOTAL SISWA</span>
+            <span class="metric-icon bg-blue"><i class="fa-solid fa-users"></i></span>
+          </div>
+          <div class="metric-value tabular-nums" id="mTotalSiswa">24</div>
+          <div class="metric-sub">
+            <span>Siswa Terdaftar Aktif</span>
+            <span class="metric-click-hint"><i class="fa-solid fa-arrow-right"></i> Lihat</span>
+          </div>
+        </div>
+
+        <div class="metric-card clickable" id="cardMetricHadir" title="Klik untuk melihat siswa yang hadir tepat waktu hari ini">
+          <div class="metric-top">
+            <span class="metric-title">HADIR TEPAT WAKTU</span>
+            <span class="metric-icon bg-green"><i class="fa-solid fa-circle-check"></i></span>
+          </div>
+          <div class="metric-value tabular-nums text-green" id="mHadir">4</div>
+          <div class="metric-sub">
+            <span>Sebelum 07:15:00 WIB</span>
+            <span class="metric-click-hint"><i class="fa-solid fa-arrow-right"></i> Lihat</span>
+          </div>
+        </div>
+
+        <div class="metric-card clickable" id="cardMetricTerlambat" title="Klik untuk melihat siswa yang terlambat masuk hari ini">
+          <div class="metric-top">
+            <span class="metric-title">TERLAMBAT</span>
+            <span class="metric-icon bg-amber"><i class="fa-solid fa-clock-rotate-left"></i></span>
+          </div>
+          <div class="metric-value tabular-nums text-amber" id="mTerlambat">2</div>
+          <div class="metric-sub">
+            <span>Lewat Batas Toleransi</span>
+            <span class="metric-click-hint"><i class="fa-solid fa-arrow-right"></i> Lihat</span>
+          </div>
+        </div>
+
+        <div class="metric-card clickable" id="cardMetricIzinSakit" title="Klik untuk melihat siswa yang izin atau sakit hari ini">
+          <div class="metric-top">
+            <span class="metric-title">IZIN / SAKIT</span>
+            <span class="metric-icon bg-indigo"><i class="fa-solid fa-file-waveform"></i></span>
+          </div>
+          <div class="metric-value tabular-nums text-indigo" id="mIzinSakit">2</div>
+          <div class="metric-sub">
+            <span><span id="mIzinSub">1</span> Izin · <span id="mSakitSub">1</span> Sakit</span>
+            <span class="metric-click-hint"><i class="fa-solid fa-arrow-right"></i> Lihat</span>
+          </div>
+        </div>
+
+        <div class="metric-card clickable" id="cardMetricBelumAbsen" title="Klik untuk melihat siswa yang belum absen hari ini">
+          <div class="metric-top">
+            <span class="metric-title">BELUM ABSEN</span>
+            <span class="metric-icon bg-rose"><i class="fa-solid fa-hourglass-start"></i></span>
+          </div>
+          <div class="metric-value tabular-nums text-rose" id="mBelumAbsen">16</div>
+          <div class="metric-sub">
+            <span>Menunggu Masuk</span>
+            <span class="metric-click-hint"><i class="fa-solid fa-arrow-right"></i> Lihat</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Two-Panel Layout (400px Left for QR HUD Viewfinder, Right for Live Scan Feed) -->
+      <div class="terminal-layout">
+        
+        <!-- Left Panel: QR Scanner HUD Viewfinder -->
+        <div class="scanner-panel">
+          <div class="panel-header">
+            <h2><i class="fa-solid fa-camera"></i> Terminal Scanner HUD</h2>
+            <div class="badge-status-kiosk" id="kioskBadge">STANDBY</div>
+          </div>
+
+          <div class="scanner-hud-container" id="hudContainer" title="Klik untuk mengaktifkan / memulai scan kamera">
+            <!-- Camera Viewport / Stream -->
+            <div id="qrReader" class="camera-stream"></div>
+            
+            <!-- Vignette Overlay -->
+            <div class="hud-vignette"></div>
+
+            <!-- In-HUD Floating Status Alert -->
+            <div class="hud-floating-alert" id="hudFloatingAlert">
+              <i class="fa-solid fa-circle-check"></i> <span>Presensi Siap</span>
+            </div>
+
+            <!-- Target Box with 4 L-Brackets -->
+            <div class="hud-target-box" id="hudTargetBox">
+              <!-- Animated Scanning Laser Line -->
+              <div class="hud-laser-line" id="hudLaser"></div>
+              
+              <!-- 4 Corner L-Brackets -->
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+            </div>
+
+            <!-- Start Prompt Overlay (visible before camera activated) -->
+            <div class="hud-start-prompt" id="hudStartPrompt">
+              <div class="hud-start-icon"><i class="fa-solid fa-camera"></i></div>
+              <div class="hud-start-title">Klik / Sentuh untuk Aktifkan Kamera</div>
+              <div class="hud-start-sub">Scan presensi otomatis saat kartu siswa diarahkan</div>
+            </div>
+
+            <div class="hud-instruction" id="hudInstruction">Arahkan QR Code Kartu ke Kotak Bidik</div>
+          </div>
+
+          <!-- Camera Device Selector (If multiple cameras present) -->
+          <div class="camera-select-row" id="cameraSelectRow" style="display: none;">
+            <select class="form-select form-select-sm select-camera-device" id="selectCameraDevice" title="Pilih Kamera Perangkat">
+              <option value="">Deteksi Kamera Otomatis</option>
+            </select>
+          </div>
+
+          <!-- Scanner Controls & Manual Input Fallback -->
+          <div class="hud-tips">
+            <i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i> Jarak ideal kartu <strong>15–25 cm</strong> dari kamera · Pastikan barcode tidak buram
+          </div>
+          <div class="scanner-actions">
+            <button class="btn btn-outline" id="btnToggleCamera">
+              <i class="fa-solid fa-video"></i> Aktifkan Kamera
+            </button>
+            <button class="btn btn-primary" id="btnManualInput">
+              <i class="fa-solid fa-keyboard"></i> Input Barcode / NIS
+            </button>
+          </div>
+
+          <!-- Quick Test Simulation Buttons -->
+          <div class="quick-sim-box">
+            <span class="sim-label">SIMULASI CEPAT UJI SCAN:</span>
+            <div class="sim-buttons">
+              <button class="btn-sim" data-qr="SISWA-0111389549-9fA3kQ">Adip (Scan Siswa 1)</button>
+              <button class="btn-sim" data-qr="SISWA-0109289289-4uT2pY">Andara (Scan Siswa 2)</button>
+              <button class="btn-sim" data-qr="SISWA-0117605409-V2mK9J">Epah (Scan Siswa 3)</button>
+              <button class="btn-sim" data-qr="SISWA-INVALID-000">QR Palsu (Uji Tolak)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Panel: Live Scan Feed & Confirmation Feed -->
+        <div class="feed-panel">
+          <div class="panel-header">
+            <div>
+              <h2><i class="fa-solid fa-list-check"></i> Live Attendance Feed</h2>
+              <span class="panel-sub">Urutan presensi masuk hari ini secara berurutan</span>
+            </div>
+            <div class="panel-header-actions">
+              <button class="btn btn-sm btn-outline-danger" id="btnResetHariIni" title="Kosongkan seluruh data absensi hari ini agar semua siswa bisa scan baru">
+                <i class="fa-solid fa-trash-can"></i> Kosongkan Hari Ini
+              </button>
+              <button class="btn btn-sm btn-outline" id="btnRefreshFeed">
+                <i class="fa-solid fa-rotate-right"></i> Segarkan
+              </button>
+            </div>
+          </div>
+
+          <!-- Last Scan Confirmation Banner -->
+          <div class="last-confirmation-card hidden" id="lastConfirmCard">
+            <div class="confirm-icon" id="confirmIcon">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="confirm-info">
+              <div class="confirm-name" id="confirmNama">ADIP ARJUNA PUTRA</div>
+              <div class="confirm-sub" id="confirmSub">NIS: 0111389549 · Kelas 10 (X) · Masuk pukul 07:05:12</div>
+              <div class="confirm-message" id="confirmMsg">Presensi tepat waktu berhasil dicatat.</div>
+            </div>
+            <div class="confirm-badge" id="confirmBadge">HADIR</div>
+          </div>
+
+          <!-- Live Feed List -->
+          <div class="feed-list" id="feedList">
+            <!-- Dynamic Feed Items -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: DATA SISWA & KARTU QR ================= -->
+    <section class="tab-content" id="tab-siswa">
+      <div class="section-toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="inputSearchSiswa" placeholder="Cari nama atau NIS siswa...">
+        </div>
+        <div class="filter-group">
+          <select id="selectKelasFilter" class="form-select">
+            <option value="">Semua Kelas</option>
+            <option value="1">Kelas 10 (X)</option>
+            <option value="2">Kelas 11 (XI)</option>
+            <option value="3">Kelas 12 (XII)</option>
+          </select>
+          <button class="btn btn-outline" id="btnOpenBatchPrint">
+            <i class="fa-solid fa-print"></i> Cetak Kartu Massal
+          </button>
+          <button class="btn btn-primary" id="btnOpenAddSiswa">
+            <i class="fa-solid fa-user-plus"></i> Tambah Siswa
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Table View -->
+      <div class="card-table-container">
+        <table class="data-table" id="siswaTable">
+          <thead>
+            <tr>
+              <th style="width: 80px;">No</th>
+              <th>NIS</th>
+              <th>Nama Siswa</th>
+              <th>L/P</th>
+              <th>Kelas</th>
+              <th>Token QR Code</th>
+              <th style="width: 180px; text-align: center;">Aksi Kartu</th>
+            </tr>
+          </thead>
+          <tbody id="siswaTableBody">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: REKAPITULASI KEHADIRAN ================= -->
+    <section class="tab-content" id="tab-rekap">
+      <!-- Sub-Navigation View Switcher -->
+      <div class="rekap-subnav">
+        <div class="segmented-control">
+          <button class="seg-btn active" id="btnSwitchBulanan" data-target="viewRekapBulanan">
+            <i class="fa-solid fa-calendar-days"></i> Rekap Bulanan per Siswa (Matriks & Statistik)
+          </button>
+          <button class="seg-btn" id="btnSwitchHarian" data-target="viewRekapHarian">
+            <i class="fa-solid fa-list-check"></i> Rekap Harian (Log Masuk)
+          </button>
+        </div>
+        <div class="subnav-legend-pill">
+          <span class="legend-badge-item"><span class="badge-h">H</span> Hadir</span>
+          <span class="legend-badge-item"><span class="badge-t">T</span> Terlambat</span>
+          <span class="legend-badge-item"><span class="badge-i">I</span> Izin</span>
+          <span class="legend-badge-item"><span class="badge-s">S</span> Sakit</span>
+          <span class="legend-badge-item"><span class="badge-a">A</span> Alpa</span>
+        </div>
+      </div>
+
+      <!-- VIEW 1: REKAP BULANAN PER SISWA (MATRIKS KEHADIRAN) -->
+      <div class="rekap-view-panel active" id="viewRekapBulanan">
+        <div class="section-toolbar">
+          <div class="filter-group">
+            <label class="form-label-inline">Bulan:
+              <select id="selectRekapBulan" class="form-select">
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Maret</option>
+                <option value="4">April</option>
+                <option value="5">Mei</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Agustus</option>
+                <option value="9">September</option>
+                <option value="10" selected>Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+            </label>
+            <label class="form-label-inline">Tahun:
+              <select id="selectRekapTahun" class="form-select">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </label>
+            <label class="form-label-inline">Kelas:
+              <select id="selectRekapBulananKelas" class="form-select">
+                <option value="">Semua Kelas</option>
+                <option value="1">Kelas 10 (X)</option>
+                <option value="2">Kelas 11 (XI)</option>
+                <option value="3">Kelas 12 (XII)</option>
+              </select>
+            </label>
+            <div class="search-box-inline">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="inputSearchRekapBulanan" placeholder="Cari NIS / Nama...">
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-outline" id="btnRefreshBulanan" title="Muat Ulang Data">
+              <i class="fa-solid fa-arrows-rotate"></i> Segarkan
+            </button>
+            <button class="btn btn-secondary" id="btnExportBulananCsv">
+              <i class="fa-solid fa-file-excel"></i> Ekspor CSV Bulanan
+            </button>
+            <button class="btn btn-primary" id="btnPrintBulanan">
+              <i class="fa-solid fa-print"></i> Cetak Laporan
+            </button>
+          </div>
+        </div>
+
+        <!-- Monthly Summary Metric Cards -->
+        <div class="monthly-summary-cards">
+          <div class="summary-card">
+            <div class="sum-title">RATA-RATA KEHADIRAN</div>
+            <div class="sum-val text-primary" id="sumAvgPersen">95.4%</div>
+            <div class="sum-sub">Tingkat disiplin siswa</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-title">TOTAL HADIR (H)</div>
+            <div class="sum-val text-green" id="sumTotalHadir">320</div>
+            <div class="sum-sub">Tepat waktu</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-title">TERLAMBAT (T)</div>
+            <div class="sum-val text-amber" id="sumTotalTerlambat">28</div>
+            <div class="sum-sub">Lewat 07:15 WIB</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-title">IZIN (I) / SAKIT (S)</div>
+            <div class="sum-val text-indigo" id="sumTotalIzinSakit">14 / 8</div>
+            <div class="sum-sub">Ada keterangan</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-title">TOTAL ALPA (A)</div>
+            <div class="sum-val text-rose" id="sumTotalAlpa">4</div>
+            <div class="sum-sub">Tanpa keterangan</div>
+          </div>
+        </div>
+
+        <!-- Monthly Matrix Container (Responsive horizontal scroll with freeze column) -->
+        <div class="matrix-table-container">
+          <table class="data-table matrix-table" id="matrixTable">
+            <thead id="matrixTableHead">
+              <!-- Dynamically generated with day columns 1..daysInMonth -->
+            </thead>
+            <tbody id="matrixTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Matrix Footer Info -->
+        <div class="matrix-footer-info">
+          <div class="info-text">
+            <i class="fa-solid fa-circle-info"></i> Klik tombol <strong>Raport</strong> pada baris siswa untuk melihat rincian rekapitulasi kehadiran siswa di setiap bulannya sepanjang tahun pelajaran.
+          </div>
+          <div class="matrix-legend-full">
+            <span class="m-legend-item"><span class="badge-h">H</span> Hadir Tepat Waktu</span>
+            <span class="m-legend-item"><span class="badge-t">T</span> Terlambat</span>
+            <span class="m-legend-item"><span class="badge-i">I</span> Izin Sah</span>
+            <span class="m-legend-item"><span class="badge-s">S</span> Sakit</span>
+            <span class="m-legend-item"><span class="badge-a">A</span> Alpa (Tanpa Keterangan)</span>
+            <span class="m-legend-item"><span class="badge-off">-</span> Libur / Akhir Pekan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: REKAP HARIAN (LOG HARIAN) -->
+      <div class="rekap-view-panel" id="viewRekapHarian">
+        <div class="section-toolbar">
+          <div class="filter-group">
+            <label class="form-label-inline">Tanggal:
+              <input type="date" id="inputDateRekap" class="form-input">
+            </label>
+            <label class="form-label-inline">Kelas:
+              <select id="selectRekapKelas" class="form-select">
+                <option value="">Semua Kelas</option>
+                <option value="1">Kelas 10 (X)</option>
+                <option value="2">Kelas 11 (XI)</option>
+                <option value="3">Kelas 12 (XII)</option>
+              </select>
+            </label>
+            <label class="form-label-inline">Status:
+              <select id="selectRekapStatus" class="form-select">
+                <option value="">Semua Status</option>
+                <option value="Hadir">Hadir</option>
+                <option value="Terlambat">Terlambat</option>
+                <option value="Izin">Izin</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Alpa">Alpa</option>
+              </select>
+            </label>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-outline" id="btnOpenManualAbsen">
+              <i class="fa-solid fa-pen-to-square"></i> Input Presensi Manual
+            </button>
+            <button class="btn btn-secondary" id="btnExportCsv">
+              <i class="fa-solid fa-file-excel"></i> Ekspor CSV Harian
+            </button>
+          </div>
+        </div>
+
+        <!-- Rekap Harian Table -->
+        <div class="card-table-container">
+          <table class="data-table" id="rekapTable">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">No</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Tanggal</th>
+                <th>Jam Server</th>
+                <th>Status</th>
+                <th>Keterangan / Alasan</th>
+                <th>Dicatat Oleh</th>
+                <th style="text-align: center; width: 100px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="rekapTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= TAB 4: SETTINGS & LAN CONFIG ================= -->
+    <section class="tab-content" id="tab-settings">
+      <div class="settings-grid">
+        
+        <!-- LAN Server Setup -->
+        <div class="card settings-card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-network-wired"></i> Konfigurasi Jaringan Lokal (LAN)</h3>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">Atur alamat IP server lokal XAMPP / Laravel yang terhubung pada jaringan Wi-Fi sekolah.</p>
+            
+            <div class="form-group">
+              <label class="form-label">Base URL Backend Laravel</label>
+              <div class="input-with-button">
+                <input type="text" id="settingBaseUrl" class="form-input tabular-nums" value="http://127.0.0.1:8000/api">
+                <button class="btn btn-primary" id="btnSaveBaseUrl">Uji & Simpan</button>
+              </div>
+              <span class="form-helper">Contoh: http://192.168.1.10:8000/api (Pastikan port 8000 dibuka di Firewall)</span>
+            </div>
+
+            <div class="ping-diagnostic-box" id="pingDiagBox">
+              <div class="diag-header">Hasil Uji Koneksi Gateway:</div>
+              <div class="diag-content" id="pingDiagContent">Status: Siap diuji. Klik "Uji & Simpan" untuk tes respons server.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule & Cutoff Policy -->
+        <div class="card settings-card">
+          <div class="card-header">
+            <h3><i class="fa-regular fa-clock"></i> Kebijakan Jadwal Jam Presensi</h3>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">Sistem otomatis menetapkan status Hadir atau Terlambat berdasarkan batas waktu berikut:</p>
+            
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label class="form-label">Jam Masuk</label>
+                <input type="time" id="setJamMasuk" class="form-input" value="07:00">
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label">Batas Terlambat</label>
+                <input type="time" id="setBatasTerlambat" class="form-input" value="07:15">
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label">Jam Tutup Scan</label>
+                <input type="time" id="setJamTutup" class="form-input" value="09:00">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nama Sekolah</label>
+              <input type="text" id="setNamaSekolah" class="form-input" value="SMA Nurul Hasan Sabuntan">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tahun Ajaran Aktif</label>
+              <input type="text" id="setTahunAjaran" class="form-input" value="2026/2027">
+            </div>
+
+            <button class="btn btn-primary" id="btnSaveSchedule">Simpan Konfigurasi Jadwal</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: PREVIEW KARTU SISWA DENGAN QR CODE (85.6 x 54 mm) -->
+  <div class="modal-backdrop" id="modalCard">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Kartu Identitas Presensi Siswa</h3>
+        <button class="modal-close" id="btnCloseCardModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Standard ID Card Preview Container -->
+        <div class="id-card-frame" id="idCardFrame">
+          <div class="id-card-header">
+            <img src="logo.jpg" alt="Logo SMA Nurul Hasan" class="id-card-logo-img">
+            <div>
+              <div class="id-card-school" id="cardSchool">SMA NURUL HASAN SABUNTAN</div>
+              <div class="id-card-sub">KARTU PRESENSI RESMI SISWA</div>
+            </div>
+          </div>
+
+          <div class="id-card-body">
+            <div class="id-card-qr-box" id="cardQrContainer"></div>
+            
+            <div class="id-card-info">
+              <h4 class="id-card-name" id="cardNama">ADIP ARJUNA PUTRA</h4>
+              <div class="id-card-meta">
+                <div><span>NIS</span>: <strong class="tabular-nums" id="cardNis">0111389549</strong></div>
+                <div><span>Kelas</span>: <strong id="cardKelas">Kelas 10 (X)</strong></div>
+                <div><span>Gender</span>: <strong id="cardGender">Laki-laki</strong></div>
+              </div>
+              <div class="id-card-token tabular-nums" id="cardToken">SISWA-0111389549-9fA3kQ</div>
+            </div>
+          </div>
+
+          <div class="id-card-footer">
+            <span>Berlaku selama menjadi siswa aktif</span>
+            <span id="cardYear">TA. 2026/2027</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnRegenerateQr">
+          <i class="fa-solid fa-arrows-rotate"></i> Terbitkan Ulang Token (Kartu Hilang)
+        </button>
+        <button class="btn btn-outline" id="btnPrintCardWindow" title="Cetak langsung ke mesin printer" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
+        <button class="btn btn-primary" id="btnDownloadCardJpg" title="Cetak dan unduh kartu siswa menjadi file gambar JPG resolusi tinggi (Ukuran standar ID Card)">
+          <i class="fa-solid fa-file-image"></i> Cetak Kartu Ini (JPG)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INPUT BARCODE / NIS MANUAL -->
+  <div class="modal-backdrop" id="modalManualInput">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>Input Barcode / NIS Manual</h3>
+        <button class="modal-close" id="btnCloseManualModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Gunakan ini jika kamera HP bermasalah atau barcode pada kartu fisik kotor/rusak.</p>
+        <div class="form-group">
+          <label class="form-label">Masukkan NIS atau Kode QR</label>
+          <input type="text" id="inputManualQrCode" class="form-input" placeholder="Contoh: 0111389549 atau SISWA-0111389549-9fA3kQ" autofocus>
+        </div>
+
+        <div class="quick-pick-title">PILIHAN CEPAT DEMO:</div>
+        <div class="quick-pick-chips">
+          <button class="btn-chip" data-val="SISWA-0111389549-9fA3kQ">0111389549 - Adip (Hadir)</button>
+          <button class="btn-chip" data-val="SISWA-0109289289-B8xR4L">0109289289 - Andara (Hadir)</button>
+          <button class="btn-chip" data-val="SISWA-3117563204-Q7wE1P">3117563204 - Fitri (Terlambat)</button>
+          <button class="btn-chip" data-val="SISWA-3093251577-K3bV9R">3093251577 - Afiv Anwar (Kelas XI)</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelManual">Batal</button>
+        <button class="btn btn-primary" id="btnSubmitManualScan">Kirim Verifikasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INPUT IZIN / SAKIT / ALPA MANUAL -->
+  <div class="modal-backdrop" id="modalManualAbsen">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>Input Presensi Manual (Izin/Sakit)</h3>
+        <button class="modal-close" id="btnCloseAbsenModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Pilih Siswa</label>
+          <select id="selectAbsenSiswa" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status Presensi</label>
+          <div class="status-radio-group">
+            <label><input type="radio" name="manualStatus" value="Izin" checked> Izin</label>
+            <label><input type="radio" name="manualStatus" value="Sakit"> Sakit</label>
+            <label><input type="radio" name="manualStatus" value="Alpa"> Alpa</label>
+            <label><input type="radio" name="manualStatus" value="Hadir"> Hadir</label>
+            <label><input type="radio" name="manualStatus" value="Terlambat"> Terlambat</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Keterangan / Alasan</label>
+          <textarea id="inputAbsenKet" class="form-input" rows="2" placeholder="Contoh: Surat dokter terlampir / Izin acara keluarga"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelAbsen">Batal</button>
+        <button class="btn btn-primary" id="btnSaveManualAbsen">Simpan Catatan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DAFTAR DETAIL SISWA SESUAI METRIK DASHBOARD (TOTAL, HADIR, TERLAMBAT, IZIN/SAKIT, BELUM ABSEN) -->
+  <div class="modal-backdrop" id="modalDetailMetrik">
+    <div class="modal-dialog modal-lg" style="max-width: 960px !important;">
+      <div class="modal-header">
+        <div>
+          <h3 id="modalMetrikTitle"><i class="fa-solid fa-users"></i> Daftar Siswa</h3>
+          <span class="panel-sub" id="modalMetrikSub">Data presensi hari ini</span>
+        </div>
+        <button class="modal-close" id="btnCloseModalMetrik">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Filter bar pencarian & kelas -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+          <div class="search-box-inline" style="flex: 1; min-width: 240px;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="inputSearchModalMetrik" placeholder="Cari nama siswa atau NIS..." style="width: 100%;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <select id="selectKelasModalMetrik" class="form-select" style="padding: 6px 12px; font-size: 13px;">
+              <option value="">Semua Kelas</option>
+            </select>
+            <span class="badge" id="modalMetrikCountBadge" style="background: var(--color-primary-container); color: white; padding: 6px 14px; border-radius: var(--radius-full); font-weight: 700; font-size: 12px; white-space: nowrap;">
+              0 Siswa
+            </span>
+          </div>
+        </div>
+
+        <!-- Tabel Siswa -->
+        <div class="card-table-container" style="max-height: 400px; overflow-y: auto;">
+          <table class="data-table" id="tableDetailMetrik">
+            <thead>
+              <tr>
+                <th style="width: 45px; text-align: center;">No</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th style="text-align: center; width: 100px;">Jam Masuk</th>
+                <th style="text-align: center; width: 110px;">Status</th>
+                <th>Keterangan / Alasan</th>
+                <th style="text-align: center; width: 160px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyDetailMetrik">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--color-text-secondary);" id="modalMetrikFooterInfo">
+          Klik tombol <strong>Kartu QR</strong> untuk melihat kartu, atau <strong>Hapus</strong> untuk membatalkan absensi agar siswa bisa absen lagi.
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline" id="btnExportModalMetrikCsv">
+            <i class="fa-solid fa-file-csv"></i> Ekspor CSV
+          </button>
+          <button class="btn btn-primary" id="btnCloseModalMetrikBtn">
+            <i class="fa-solid fa-check"></i> Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REKAP KEHADIRAN SISWA PER BULAN (12 BULAN) -->
+  <div class="modal-backdrop" id="modalRaporSiswa">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3><i class="fa-solid fa-user-graduate"></i> Rekapitulasi Presensi per Siswa (Tiap Bulan)</h3>
+          <span class="panel-sub">Laporan rekap kehadiran siswa di setiap bulannya sepanjang tahun</span>
+        </div>
+        <div class="modal-header-actions">
+          <button class="btn btn-sm btn-word" id="btnHeaderExportWord" title="Ekspor ke Dokumen Microsoft Word (.doc)">
+            <i class="fa-solid fa-file-word"></i> Word
+          </button>
+          <button class="btn btn-sm btn-excel" id="btnHeaderExportExcel" title="Ekspor ke Lembar Kerja Microsoft Excel (.xls)">
+            <i class="fa-solid fa-file-excel"></i> Excel
+          </button>
+          <button class="btn btn-sm btn-primary" id="btnHeaderPrintRapor" title="Cetak Raport Presensi atau Simpan PDF">
+            <i class="fa-solid fa-print"></i> Cetak
+          </button>
+          <button class="modal-close" id="btnCloseRaporModal" title="Tutup">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Official School Letterhead (Tampil Khusus Print / Cetak Resmi) -->
+        <div class="print-official-header" id="raporPrintHeader">
+          <div class="p-header-brand">
+            <img src="logo.jpg" alt="Logo Sekolah" class="p-header-logo">
+            <div class="p-header-text">
+              <h2 class="p-school-name" id="printSchoolName">SMA NURUL HASAN SABUNTAN</h2>
+              <div class="p-school-address">NPSN: 20512345 · Terakreditasi "A" (Unggul)</div>
+              <div class="p-school-sub">Jl. Pendidikan No. 45, Kompleks Akademik Sabuntan · Telp. (0328) 821992</div>
+            </div>
+          </div>
+          <div class="p-header-divider"></div>
+          <h3 class="p-doc-title" id="printDocTitle">LEMBAR REKAPITULASI PRESENSI SISWA</h3>
+          <div class="p-doc-year">Tahun Pelajaran: <span id="printTahunAjaran">2026/2027</span></div>
+        </div>
+
+        <!-- Mode & Periode Selector Bar (Pilih Bulan Tertentu atau 1 Tahun) -->
+        <div class="rapor-filter-bar">
+          <div class="filter-item">
+            <label class="form-label-inline"><i class="fa-solid fa-calendar-check"></i> Periode Rekap:
+              <select id="selectRaporMode" class="form-select">
+                <option value="bulanan" selected>Bulan Tertentu (Pilihan Bulan)</option>
+                <option value="tahunan">1 Tahun Penuh (Januari - Desember)</option>
+              </select>
+            </label>
+          </div>
+          <div class="filter-item" id="boxRaporSelectBulan">
+            <label class="form-label-inline">Pilih Bulan:
+              <select id="selectRaporBulanTarget" class="form-select">
+                <option value="1">Januari</option>
+                <option value="2">Februari</option>
+                <option value="3">Maret</option>
+                <option value="4">April</option>
+                <option value="5">Mei</option>
+                <option value="6">Juni</option>
+                <option value="7">Juli</option>
+                <option value="8">Agustus</option>
+                <option value="9">September</option>
+                <option value="10">Oktober</option>
+                <option value="11">November</option>
+                <option value="12">Desember</option>
+              </select>
+            </label>
+          </div>
+          <div class="filter-item">
+            <label class="form-label-inline">Tahun:
+              <select id="selectRaporTahunTarget" class="form-select">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Student Info Header Card -->
+        <div class="student-profile-summary">
+          <div class="student-avatar-large" id="raporAvatar">AA</div>
+          <div class="student-meta-details">
+            <h4 id="raporNama">ADIP ARJUNA PUTRA</h4>
+            <div class="meta-row">
+              <span><strong>NIS:</strong> <span id="raporNis">0111389549</span></span>
+              <span><strong>Kelas:</strong> <span id="raporKelas">Kelas 10 (X)</span></span>
+              <span><strong>Periode:</strong> <span id="raporPeriodeText">Februari 2026</span></span>
+            </div>
+          </div>
+          <div class="student-overall-score">
+            <div class="score-label" id="raporScoreLabel">KEHADIRAN BULAN INI</div>
+            <div class="score-val text-green" id="raporPersenTahunan">100.0%</div>
+            <div class="score-badge" id="raporScoreBadge">Sangat Baik</div>
+          </div>
+        </div>
+
+        <!-- Summary Badges (H, T, I, S, A) -->
+        <div class="rapor-mini-badges">
+          <div class="rm-badge bg-green-sub"><span id="raporTotalH">22</span> Hadir (H)</div>
+          <div class="rm-badge bg-amber-sub"><span id="raporTotalT">2</span> Terlambat (T)</div>
+          <div class="rm-badge bg-blue-sub"><span id="raporTotalI">0</span> Izin (I)</div>
+          <div class="rm-badge bg-indigo-sub"><span id="raporTotalS">0</span> Sakit (S)</div>
+          <div class="rm-badge bg-rose-sub"><span id="raporTotalA">0</span> Alpa (A)</div>
+        </div>
+
+        <!-- TABLE VIEW 1: HASIL ABSEN HARIAN BULAN TERTENTU (misal Februari) -->
+        <div class="card-table-container" id="boxTableHarianBulanan" style="max-height: 400px; overflow-x: auto; overflow-y: auto; margin-top: 14px; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f1f5f9; border-bottom: 1px solid var(--color-border); border-radius: var(--radius-sm) var(--radius-sm) 0 0;">
+            <button class="btn btn-sm btn-outline" id="btnBackToTahunanTable">
+              <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar 12 Bulan
+            </button>
+            <span style="font-size: 13px; font-weight: 700; color: var(--color-primary);" id="labelRincianBulanAktif">
+              Rincian Harian: Februari 2026
+            </span>
+          </div>
+          <table class="data-table" id="tableRaporHarian" style="min-width: 780px; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">No</th>
+                <th>Hari & Tanggal</th>
+                <th style="text-align: center; width: 110px;">Jam Masuk</th>
+                <th style="text-align: center; width: 110px;">Status</th>
+                <th>Keterangan / Catatan</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyRaporHarian">
+              <!-- Rendered by JS -->
+            </tbody>
+            <tfoot id="tfootRaporHarian" style="background: var(--color-surface-container); font-weight: 700;">
+              <!-- Akumulasi Total Bulan Terpilih -->
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- TABLE VIEW 2: 12-MONTH BREAKDOWN TABLE (Daftar 12 Bulan dengan Fitur Rekap Nilai per Bulan) -->
+        <div class="card-table-container" id="boxTableTahunan" style="max-height: 400px; overflow-x: auto; overflow-y: auto; margin-top: 14px;">
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; font-size: 11.5px; color: var(--color-text-secondary); margin-bottom: 6px;">
+            <i class="fa-solid fa-arrows-left-right" style="color: var(--color-primary);"></i>
+            <span>Geser tabel ke kanan / kiri untuk melihat tombol Word, Excel, Cetak, dan Rincian</span>
+          </div>
+          <table class="data-table" id="tableRaporBulanan" style="min-width: 1080px; width: 100%;">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">No</th>
+                <th>Bulan</th>
+                <th style="text-align: center; color: #15803d;">Hadir (H)</th>
+                <th style="text-align: center; color: #b45309;">Terlambat (T)</th>
+                <th style="text-align: center; color: #1d4ed8;">Izin (I)</th>
+                <th style="text-align: center; color: #6d28d9;">Sakit (S)</th>
+                <th style="text-align: center; color: #be123c;">Alpa (A)</th>
+                <th style="text-align: center;">Total Hari</th>
+                <th style="text-align: center; min-width: 90px;">% Hadir</th>
+                <th>Status Kepatuhan</th>
+                <th style="text-align: center; min-width: 250px;">Aksi / Rekap Presensi Bulan</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyRaporBulanan">
+              <!-- Rendered by JS -->
+            </tbody>
+            <tfoot id="tfootRaporBulanan" style="background: var(--color-surface-container); font-weight: 700;">
+              <!-- Akumulasi Total 1 Tahun -->
+            </tfoot>
+          </table>
+        </div>
+
+
+        <!-- Official Signatures (Tampil Khusus Print / Cetak Resmi) -->
+        <div class="print-official-signatures" id="raporPrintSignatures">
+          <div class="sig-block">
+            <div class="sig-title">Mengetahui,</div>
+            <div class="sig-role">Orang Tua / Wali Murid</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">( ........................................ )</div>
+          </div>
+          <div class="sig-block">
+            <div class="sig-title">Sabuntan, <span id="printDateNow">17 Oktober 2026</span></div>
+            <div class="sig-role">Wali Kelas</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">( Siti Rahmawati, S.Pd. )</div>
+            <div class="sig-nip">NIP. 19880412 201402 2 003</div>
+          </div>
+          <div class="sig-block">
+            <div class="sig-title">Mengesahkan,</div>
+            <div class="sig-role">Kepala Sekolah</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">( Anwar, S.Pd., Gr. )</div>
+            <div class="sig-nip">NIP. 19820510 200801 1 012</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button class="btn btn-outline" id="btnCloseRaporBtn">
+          <i class="fa-solid fa-xmark"></i> Tutup Laporan
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Application Logic JS -->
+  <script src="app.js"></script>
+</body>
+</html>

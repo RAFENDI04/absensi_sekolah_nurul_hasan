@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Absensi extends Model
+{
+    use HasFactory;
+
+    protected $table = 'absensi';
+
+    protected $fillable = [
+        'siswa_id',
+        'tanggal',
+        'jam',
+        'status',
+        'keterangan',
+        'dicatat_oleh',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'tanggal' => 'date:Y-m-d',
+        ];
+    }
+
+    public function siswa()
+    {
+        return $this->belongsTo(Siswa::class, 'siswa_id');
+    }
+
+    public function pencatat()
+    {
+        return $this->belongsTo(User::class, 'dicatat_oleh');
+    }
+}
